@@ -9,8 +9,8 @@ const bodyParser = require("body-parser");
 require("./mongo.js");
 //----------middleware---------------------------------------------- 
 app.use(bodyParser.json())
-app.use("api/sauces", saucesRouter)
-app.use("api/auth", authRouter)
+app.use("/api/sauces", saucesRouter)
+app.use("/api/auth", authRouter)
 //---------------------route-----------------------------------------
 app.get("/", (req, res) => res.send("Hello World!"));
 //-----------Listen--------------------------------------------------

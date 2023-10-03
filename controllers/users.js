@@ -10,6 +10,7 @@ async function createUser(req, res) {
     await user.save();
     res.status(201).send({ message: "Utilisateur enregistré !" });
   } catch (err) {
+    console.error(err);
     res.status(409).send({ message: "User pas enregistré :" + err });
   }
 }
@@ -24,6 +25,10 @@ async function logUser(req, res) {
     const email = req.body.email;
     const password = req.body.password;
     const user = await User.findOne({ email: email });
+
+    if (!user) {
+      return res.status(403).send({ message: "Utilisateur non trouvé" });
+    }
 
     const isPasswordOK = await bcrypt.compare(password, user.password);
     if (!isPasswordOK) {

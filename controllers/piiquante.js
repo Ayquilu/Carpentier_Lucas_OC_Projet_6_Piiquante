@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const { unlink } = require("fs/promises");
-const {likeSauce} = require("./likes");
 
 const productSchema = new mongoose.Schema({
   userId: String,
@@ -9,7 +8,7 @@ const productSchema = new mongoose.Schema({
   description: String,
   mainPepper: String,
   imageUrl: String,
-  heat: Number,
+  heat: { type: Number, min: 1, max: 10 },
   likes: Number,
   dislikes: Number,
   usersLiked: [String],
@@ -62,7 +61,8 @@ function modifySauce(req, res){
 function deleteImage(product){
   if (product == null) return;
   console.log("DELETE IMAGE", product);
-  const imageToDelete = product.imageUrl.spit("/").at(-1);
+  const imageToDelete = product.imageUrl.split("/").at(-1);
+  console.log("imageToDelete", imageToDelete);
   return unlink("images/" + imageToDelete);
 };
 
@@ -115,4 +115,4 @@ function createSauce(req, res){
 };
 
 
-module.exports = {sendClientResponse, getSauce, getSauces, createSauce, getSauceById, deleteSauce, modifySauce, likeSauce}
+module.exports = {sendClientResponse, getSauce, getSauces, createSauce, getSauceById, deleteSauce, modifySauce}
