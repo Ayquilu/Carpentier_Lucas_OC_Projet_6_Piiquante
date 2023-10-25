@@ -19,7 +19,7 @@ function hashPassword(password) {
   const saltRounds = 10;
   return bcrypt.hash(password, saltRounds);
 }
-
+ 
 async function logUser(req, res) {
   try {
     const email = req.body.email;
@@ -34,17 +34,18 @@ async function logUser(req, res) {
     if (!isPasswordOK) {
       res.status(403).send({ message: "Mot de passe incorrect" });
     }
-    const token = createToken(email);
-    res.status(200).send({ userId: user?._id, token: token });
+    let userId = user._id.toString() ;
+    const token = createToken(email, userId);
+    res.status(200).send({ userId, token });
   } catch (err) {
     console.error(err);
     res.status(500).send({ message: "Erreur interne" });
   }
 }
 
-function createToken(email) {
+function createToken(email, userId) {
   const jwtPassword = process.env.JWT_PASSWORD;
-  return jwt.sign({ email: email }, jwtPassword, { expiresIn: "24h" });
+  return jwt.sign({ email, userId }, jwtPassword, { expiresIn: "24h" });
 }
 
 module.exports = { createUser, logUser };

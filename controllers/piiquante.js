@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const { unlink } = require("fs/promises");
+const jwt = require("jsonwebtoken");
+const { log } = require("console");
 
 const productSchema = new mongoose.Schema({
   userId: String,
@@ -17,33 +19,46 @@ const productSchema = new mongoose.Schema({
 
 const Product = mongoose.model("Product", productSchema);
 
-function getSauces(req, res){
+function getSauces(req, res) {
   Product.find({})
     .then((products) => res.send(products))
     .catch((error) => res.status(500).send(error));
-};
+}
 
-function getSauce(req, res){
+function getSauce(req, res) {
   const { id } = req.params;
   return Product.findById(id);
-};
+}
 
-function getSauceById(req, res){
+function getSauceById(req, res) {
   getSauce(req, res)
     .then((product) => sendClientResponse(product, res))
     .catch((err) => res.status(500).send(err));
-};
+}
 
-function deleteSauce(req, res){
+async function deleteSauce(req, res) {
   const { id } = req.params;
+  const userId = getUserIdFromToken(req.headers.authorization.split(" ")[1]);
+  let sauce = await getSauce(req, res);
+  if (sauce.userId !== userId) {
+    return res
+      .status(403)
+      .send({ message: "You are not authorized to delete this sauce" });
+  }
+
   Product.findByIdAndDelete(id)
     .then((product) => sendClientResponse(product, res))
     .then((item) => deleteImage(item))
     .then((res) => console.log("FILE DELETED", res))
     .catch((err) => res.status(500).send({ message: err }));
-};
+}
 
-function modifySauce(req, res){
+function getUserIdFromToken(token) {
+  const decoded = jwt.verify(token, process.env.JWT_PASSWORD);
+  return decoded.userId;
+}
+
+function modifySauce(req, res) {
   const {
     params: { id },
   } = req;
@@ -56,15 +71,15 @@ function modifySauce(req, res){
     .then((product) => deleteImage(product))
     .then((res) => console.log("FILE DELETED", res))
     .catch((err) => console.error("PROBLEM UPDATING", err));
-};
+}
 
-function deleteImage(product){
+function deleteImage(product) {
   if (product == null) return;
   console.log("DELETE IMAGE", product);
   const imageToDelete = product.imageUrl.split("/").at(-1);
   console.log("imageToDelete", imageToDelete);
   return unlink("images/" + imageToDelete);
-};
+}
 
 function makePayload(hasNewImage, req) {
   console.log("hasNewImage", hasNewImage);
@@ -89,7 +104,7 @@ function makeImageUrl(req, fileName) {
   return req.protocol + "://" + req.get("host") + "/images/" + fileName;
 }
 
-function createSauce(req, res){
+function createSauce(req, res) {
   const { body, file } = req;
   const { fileName } = file;
   const sauce = JSON.parse(body.sauce);
@@ -110,9 +125,16 @@ function createSauce(req, res){
   });
   product
     .save()
-    .then((message) => res.status(201).send({ message}))
+    .then((message) => res.status(201).send({ message }))
     .catch((err) => res.status(500).send(err));
+}
+
+module.exports = {
+  sendClientResponse,
+  getSauce,
+  getSauces,
+  createSauce,
+  getSauceById,
+  deleteSauce,
+  modifySauce,
 };
-
-
-module.exports = {sendClientResponse, getSauce, getSauces, createSauce, getSauceById, deleteSauce, modifySauce}
